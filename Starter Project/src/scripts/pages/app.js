@@ -1,0 +1,125 @@
+import routes from "../routes/routes";
+import { getActiveRoute } from "../routes/url-parser";
+import "leaflet/dist/leaflet.css";
+
+class App {
+  #content = null;
+  #drawerButton = null;
+  #navigationDrawer = null;
+
+  constructor({ navigationDrawer, drawerButton, content }) {
+    this.#content = content;
+    this.#drawerButton = drawerButton;
+    this.#navigationDrawer = navigationDrawer;
+
+    this._setupDrawer();
+    this._updateNavigation();
+  }
+
+  _setupDrawer() {
+    this.#drawerButton.addEventListener("click", () => {
+      this.#navigationDrawer.classList.toggle("open");
+    });
+
+    document.body.addEventListener("click", (event) => {
+      if (
+        !this.#navigationDrawer.contains(event.target) &&
+        !this.#drawerButton.contains(event.target)
+      ) {
+        this.#navigationDrawer.classList.remove("open");
+      }
+
+      this.#navigationDrawer.querySelectorAll("a").forEach((link) => {
+        if (link.contains(event.target)) {
+          this.#navigationDrawer.classList.remove("open");
+        }
+      });
+    });
+  }
+
+  _updateNavigation() {
+    const token = localStorage.getItem("token");
+    const navList = document.getElementById("nav-list");
+
+    if (!navList) return;
+
+    // For authenticated users
+    if (token) {
+      navList.innerHTML = `
+        <li><a href="#/">Beranda</a></li>
+        <li><a href="#/about">About</a></li>
+        <li><a href="#/add">Tambah Cerita</a></li>
+        <li><a href="#" id="logout-btn">Logout</a></li>
+      `;
+
+      // Add logout functionality
+      document.getElementById("logout-btn").addEventListener("click", (e) => {
+        e.preventDefault();
+        localStorage.removeItem("token");
+        window.location.hash = "/login";
+        this._updateNavigation();
+      });
+    }
+    // For non-authenticated users
+    else {
+      navList.innerHTML = `
+        <li><a href="#/">Beranda</a></li>
+        <li><a href="#/about">About</a></li>
+        <li><a href="#/login">Login</a></li>
+        <li><a href="#/register">Register</a></li>
+      `;
+    }
+  }
+
+  async renderPage() {
+    try {
+      const url = getActiveRoute();
+      const page = routes[url];
+
+      if (!page) {
+        this.#content.innerHTML = `
+          <section class="container">
+            <h1>404 - Halaman Tidak Ditemukan</h1>
+            <p>Halaman yang Anda cari tidak ada.</p>
+            <a href="#/">Kembali ke Beranda</a>
+          </section>
+        `;
+        return;
+      }
+
+      // Update navigation before rendering page
+      this._updateNavigation();
+
+      // Check if page needs authentication
+      const token = localStorage.getItem("token");
+      const authRequiredPages = ["/add"];
+      const nonAuthPages = ["/login", "/register"];
+
+      if (authRequiredPages.includes(url) && !token) {
+        // Redirect to login if trying to access protected page without token
+        alert("Silakan login terlebih dahulu");
+        window.location.hash = "/login";
+        return;
+      }
+
+      if (nonAuthPages.includes(url) && token) {
+        // Redirect to home if trying to access login/register while logged in
+        window.location.hash = "/";
+        return;
+      }
+
+      this.#content.innerHTML = await page.render();
+      await page.afterRender();
+    } catch (error) {
+      console.error("Error rendering page:", error);
+      this.#content.innerHTML = `
+        <section class="container">
+          <h1>Terjadi Kesalahan</h1>
+          <p>Maaf, terjadi kesalahan dalam memuat halaman. Silakan coba lagi nanti.</p>
+        </section>
+      `;
+    }
+  }
+}
+
+export default App;
