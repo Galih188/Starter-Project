@@ -7,7 +7,7 @@ class HomePresenter {
     this.#view = view;
   }
 
-  async fetchStories() {
+  async init() {
     try {
       this.#view.showLoading();
       const stories = await this.#model.getStories();
@@ -17,10 +17,12 @@ class HomePresenter {
       const storiesWithLocation = stories.filter(
         (story) => story.lat && story.lon
       );
+      
       if (storiesWithLocation.length > 0) {
+        // Use setTimeout to ensure the map container is ready
         setTimeout(() => {
           this.#view.renderMap(stories);
-        }, 100); // Small delay to ensure the map container is ready
+        }, 100);
       }
     } catch (error) {
       this.#view.showError("Gagal memuat cerita. " + error.message);
