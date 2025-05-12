@@ -2,86 +2,58 @@ class AddStoryPresenter {
   #model;
   #view;
   #stream;
+  #map;
   #photoData;
 
   constructor({ model, view }) {
     this.#model = model;
     this.#view = view;
     this.#stream = null;
+    this.#map = null;
     this.#photoData = null;
   }
 
   async init() {
     try {
-      const video = document.getElementById("camera");
-      const canvas = document.getElementById("snapshot");
-      const takePhotoBtn = document.getElementById("take-photo");
-      const latInput = document.getElementById("lat");
-      const lonInput = document.getElementById("lon");
-      const form = document.getElementById("story-form");
-      const fileInput = document.getElementById("file-input");
-
-      // Initialize camera or fallback
-      this.#stream = await this.#view.initCamera();
-
-      // Only set video source if stream is available
-      if (this.#stream && video) {
-        video.srcObject = this.#stream;
-      }
-
-      // Setup photo capture
-      takePhotoBtn.addEventListener("click", () => {
-        this.#photoData = this.#view.capturePhoto(video, canvas);
-      });
-
-      // For file input fallback
-      if (fileInput) {
-        fileInput.addEventListener("change", (e) => {
-          if (e.target.files && e.target.files[0]) {
-            // View will handle the preview in initCamera
-            takePhotoBtn.textContent = "Foto Sudah Dipilih";
-          }
-        });
-      }
+      // Initialize camera
+      this.#stream = await this.#view.initCamera(
+        () => this.#handlePhotoCapture(), 
+        (event) => this.#handleFileSelection(event)
+      );
 
       // Initialize map
-      const map = this.#view.initMap();
-      if (map) {
-        this.#view.handleMapClick(map, latInput, lonInput);
-      }
+      this.#map = this.#view.initMap((latlng) => this.#handleMapClick(latlng));
 
-      // Setup form submission
-      form.addEventListener("submit", (e) => this.#handleSubmit(e));
+      // Bind form submission
+      this.#view.bindSubmitHandler(() => this.#handleSubmit());
     } catch (error) {
       console.error("Error initializing add story page:", error);
-      this.#view.showErrorMessage(
-        "Gagal menginisialisasi halaman. Silakan coba lagi."
-      );
+      this.#view.showErrorMessage("Gagal menginisialisasi halaman. Silakan coba lagi.");
     }
   }
 
-  async #handleSubmit(e) {
-    e.preventDefault();
+  #handlePhotoCapture() {
+    this.#photoData = this.#view.capturePhoto();
+  }
 
+  #handleFileSelection(event) {
+    this.#photoData = this.#view.handleFileSelection(event);
+  }
+
+  #handleMapClick(latlng) {
+    if (this.#map) {
+      this.#view.updateMarker(this.#map, latlng);
+    }
+  }
+
+  async #handleSubmit() {
     try {
       this.#view.showLoading();
 
-      const description = document.getElementById("description").value;
-      const lat = document.getElementById("lat").value || null;
-      const lon = document.getElementById("lon").value || null;
-      const fileInput = document.getElementById("file-input");
+      // Get story data from view
+      const storyData = this.#view.getStoryData();
 
-      // Get photo from camera or file input
-      if (!this.#photoData && fileInput && fileInput.files.length > 0) {
-        // Handle file input directly
-        const file = fileInput.files[0];
-        this.#photoData = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target.result);
-          reader.readAsDataURL(file);
-        });
-      }
-
+      // Validate photo
       if (!this.#photoData) {
         throw new Error("Silakan ambil foto atau pilih file terlebih dahulu");
       }
@@ -94,16 +66,15 @@ class AddStoryPresenter {
 
       // Submit story
       const result = await this.#model.postStory({
-        description,
+        description: storyData.description,
         photo: photoFile,
-        lat: lat,
-        lon: lon,
+        lat: storyData.lat,
+        lon: storyData.lon,
       });
 
+      // Show success message and redirect
       this.#view.showSuccessMessage(result.message);
-
-      // Redirect to home page
-      window.location.hash = "/";
+      this.#view.redirectToHome();
     } catch (error) {
       this.#view.showErrorMessage(error.message);
     } finally {
