@@ -1,6 +1,14 @@
 import { showFormattedDate } from "../../utils/index";
 
 class HomeView {
+  #storiesContainer;
+  #mapContainer;
+
+  constructor() {
+    this.#storiesContainer = null;
+    this.#mapContainer = null;
+  }
+
   getTemplate() {
     return `
       <section class="container">
@@ -11,17 +19,23 @@ class HomeView {
     `;
   }
 
+  bindElements() {
+    this.#storiesContainer = document.querySelector("#stories-list");
+    this.#mapContainer = document.querySelector("#stories-map");
+  }
+
   showLoading() {
-    const storiesContainer = document.querySelector("#stories-list");
-    storiesContainer.innerHTML = `
+    if (!this.#storiesContainer) this.bindElements();
+    this.#storiesContainer.innerHTML = `
       <div class="loader">Loading stories...</div>
     `;
   }
 
   showStories(stories) {
-    const storiesContainer = document.querySelector("#stories-list");
+    if (!this.#storiesContainer) this.bindElements();
+    
     if (stories.length === 0) {
-      storiesContainer.innerHTML = `
+      this.#storiesContainer.innerHTML = `
         <div class="empty-state">
           <p>Tidak ada cerita yang ditampilkan.</p>
         </div>
@@ -29,7 +43,7 @@ class HomeView {
       return;
     }
 
-    storiesContainer.innerHTML = stories
+    this.#storiesContainer.innerHTML = stories
       .map(
         (story) => `
           <article class="story-item">
@@ -49,8 +63,8 @@ class HomeView {
   }
 
   showError(message) {
-    const storiesContainer = document.querySelector("#stories-list");
-    storiesContainer.innerHTML = `
+    if (!this.#storiesContainer) this.bindElements();
+    this.#storiesContainer.innerHTML = `
       <div class="error-state">
         <p>${message}</p>
       </div>
@@ -58,19 +72,18 @@ class HomeView {
   }
 
   renderMap(stories) {
-    try {
-      const mapContainer = document.querySelector("#stories-map");
-      if (!mapContainer) return;
+    if (!this.#mapContainer) this.bindElements();
 
+    try {
       // Check if any stories have location data
       const storiesWithLocation = stories.filter(
         (story) => story.lat && story.lon
       );
 
       if (storiesWithLocation.length === 0) {
-        mapContainer.innerHTML =
+        this.#mapContainer.innerHTML =
           "<p>Tidak ada cerita dengan lokasi yang tersedia.</p>";
-        return;
+        return null;
       }
 
       // Create map instance
@@ -106,10 +119,13 @@ class HomeView {
       if (bounds.isValid()) {
         map.fitBounds(bounds);
       }
+
+      return map;
     } catch (error) {
       console.error("Error rendering map:", error);
-      document.querySelector("#stories-map").innerHTML =
+      this.#mapContainer.innerHTML =
         "<p>Gagal memuat peta. Silakan muat ulang halaman.</p>";
+      return null;
     }
   }
 }
