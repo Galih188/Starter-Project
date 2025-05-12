@@ -17,6 +17,6 @@ export default class HomePage {
   }
 
   async afterRender() {
-    await this.#presenter.fetchStories();
+    await this.#presenter.init();
   }
 }
