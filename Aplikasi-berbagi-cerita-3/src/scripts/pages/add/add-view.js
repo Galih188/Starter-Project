@@ -124,21 +124,32 @@ class AddStoryView {
   handleMapClick(map, latInput, lonInput) {
     if (!map) return;
 
+    // Buat custom icon untuk marker
+    const customIcon = L.icon({
+      iconUrl:
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzODQgNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNS4xIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZmlsbD0iI2Q5NzcwNiIgZD0iTTIxNS43IDQ5OS4yQzI2Ny4yIDQzNSAzODQgMjc5LjQgMzg0IDE5MkMzODQgODYgMjk4IDAgMTkyIDBTMCA4NiAwIDE5MmMwIDg3LjQgMTE2LjggMjQzIDIxNi4zIDMwNy4yYzUuOCA0LjAgMTMuNiA0LjAgMTkuNCAwek0xOTIgMTI4YTY0IDY0IDAgMSAxIDAgMTI4IDY0IDY0IDAgMSAxIDAtMTI4eiIvPjwvc3ZnPg==",
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+    });
+
     let marker = null;
     map.on("click", function (e) {
       latInput.value = e.latlng.lat;
       lonInput.value = e.latlng.lng;
 
       if (marker) map.removeLayer(marker);
-      marker = L.marker(e.latlng).addTo(map);
+      marker = L.marker(e.latlng, { icon: customIcon }).addTo(map);
 
       marker.bindPopup("Lokasi cerita dipilih").openPopup();
     });
+
+    // Jika sudah ada koordinat yang tersimpan, tampilkan marker
     if (latInput.value && lonInput.value) {
       const lat = parseFloat(latInput.value);
       const lon = parseFloat(lonInput.value);
       if (!isNaN(lat) && !isNaN(lon)) {
-        marker = L.marker([lat, lon]).addTo(map);
+        marker = L.marker([lat, lon], { icon: customIcon }).addTo(map);
         marker.bindPopup("Lokasi cerita dipilih").openPopup();
         map.setView([lat, lon], 13);
       }
