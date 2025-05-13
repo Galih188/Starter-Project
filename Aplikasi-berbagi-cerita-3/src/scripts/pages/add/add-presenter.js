@@ -123,17 +123,24 @@ class AddStoryPresenter {
 
       this.#view.showSuccessMessage(result.message);
 
+      // Matikan kamera sebelum pindah halaman
+      this.cleanup();
+
       // Redirect to home page
       window.location.hash = "/";
     } catch (error) {
       this.#view.showErrorMessage(error.message);
     } finally {
       this.#view.hideLoading();
+    }
+  }
 
-      // Stop camera stream if it exists
-      if (this.#stream) {
-        this.#stream.getTracks().forEach((track) => track.stop());
-      }
+  // Metode baru untuk membersihkan resource kamera saat pengguna meninggalkan halaman
+  cleanup() {
+    if (this.#stream) {
+      this.#stream.getTracks().forEach((track) => track.stop());
+      this.#stream = null;
+      console.log("Camera stream stopped");
     }
   }
 }
