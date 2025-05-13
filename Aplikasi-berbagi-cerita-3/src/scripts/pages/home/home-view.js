@@ -89,6 +89,16 @@ class HomeView {
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
 
+      // Buat custom icon untuk marker
+      const customIcon = L.icon({
+        iconUrl:
+          "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzODQgNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNS4xIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZmlsbD0iI2Q5NzcwNiIgZD0iTTIxNS43IDQ5OS4yQzI2Ny4yIDQzNSAzODQgMjc5LjQgMzg0IDE5MkMzODQgODYgMjk4IDAgMTkyIDBTMCA4NiAwIDE5MmMwIDg3LjQgMTE2LjggMjQzIDIxNi4zIDMwNy4yYzUuOCA0LjAgMTMuNiA0LjAgMTkuNCAwek0xOTIgMTI4YTY0IDY0IDAgMSAxIDAgMTI4IDY0IDY0IDAgMSAxIDAtMTI4eiIvPjwvc3ZnPg==",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        tooltipAnchor: [16, -28],
+      });
+
       // Add markers for stories with location
       const bounds = L.latLngBounds();
       const markers = [];
@@ -101,12 +111,9 @@ class HomeView {
           const latlng = L.latLng(lat, lon);
           bounds.extend(latlng);
 
-          // L.marker(latlng).addTo(map).bindPopup(`
-          //     <b>${story.name}</b><br>
-          //     ${story.description.substring(0, 50)}...
-          //   `);
-
-          const marker = L.marker(latlng).addTo(map).bindPopup(`
+          // Menggunakan custom icon
+          const marker = L.marker(latlng, { icon: customIcon }).addTo(map)
+            .bindPopup(`
             <div class="popup-content">
               <h3>${story.name}</h3>
               <img src="${
