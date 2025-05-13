@@ -18,5 +18,10 @@ export default class AddStoryPage {
 
   async afterRender() {
     await this.#presenter.init();
+    
+    // Tambahkan listener untuk event hashchange agar kamera dimatikan saat pengguna meninggalkan halaman
+    window.addEventListener("hashchange", () => {
+      this.#presenter.cleanup();
+    });
   }
 }
