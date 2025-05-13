@@ -7,6 +7,7 @@ class App {
   #content = null;
   #drawerButton = null;
   #navigationDrawer = null;
+  #currentPage = null;
 
   constructor({ navigationDrawer, drawerButton, content }) {
     this.#content = content;
@@ -21,6 +22,13 @@ class App {
     if (skipLink) {
       setupSkipToContent(skipLink, this.#content);
     }
+    
+    // Menangani hashchange untuk membersihkan halaman sebelumnya
+    window.addEventListener("hashchange", () => {
+      if (this.#currentPage && typeof this.#currentPage.cleanup === 'function') {
+        this.#currentPage.cleanup();
+      }
+    });
   }
 
   _setupDrawer() {
@@ -103,10 +111,16 @@ class App {
         return;
       }
 
+      // Cleanup halaman sebelumnya jika ada
+      if (this.#currentPage && typeof this.#currentPage.cleanup === 'function') {
+        this.#currentPage.cleanup();
+      }
+
       const transition = transitionHelper({
         updateDOM: async () => {
           this.#content.innerHTML = await page.render();
           await page.afterRender();
+          this.#currentPage = page; // Simpan referensi halaman saat ini
         },
       });
 
